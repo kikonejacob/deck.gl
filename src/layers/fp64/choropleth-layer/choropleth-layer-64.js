@@ -20,10 +20,8 @@
 
 import {Layer} from '../../../lib';
 import {assembleShaders} from '../../../shader-utils';
-import {fp64ify} from '../../../lib/utils/fp64';
+import {flatten, normalizeGeojson, fp64ify} from '../../../lib/utils';
 import {GL, Model, Geometry} from 'luma.gl';
-import flattenDeep from 'lodash.flattendeep';
-import normalize from 'geojson-normalize';
 import earcut from 'earcut';
 import {readFileSync} from 'fs';
 import {join} from 'path';
@@ -154,13 +152,13 @@ export default class ChoroplethLayer64 extends Layer {
         )
     );
 
-    attribute.value = new IndexType(flattenDeep(indices));
+    attribute.value = new IndexType(flatten(indices));
     attribute.target = GL.ELEMENT_ARRAY_BUFFER;
     this.state.model.setVertexCount(attribute.value.length / attribute.size);
   }
 
   calculatePositionsFP64(attribute) {
-    const vertices = flattenDeep(this.state.choropleths);
+    const vertices = flatten(this.state.choropleths);
     attribute.value = new Float32Array(vertices.length / 3 * 4);
     for (let index = 0; index < vertices.length / 3; index++) {
       [
@@ -175,7 +173,7 @@ export default class ChoroplethLayer64 extends Layer {
   }
 
   calculateHeightsFP64(attribute) {
-    const vertices = flattenDeep(this.state.choropleths);
+    const vertices = flatten(this.state.choropleths);
     attribute.value = new Float32Array(vertices.length / 3 * 2);
     for (let index = 0; index < vertices.length / 3; index++) {
       [
@@ -203,7 +201,7 @@ export default class ChoroplethLayer64 extends Layer {
       }
     );
 
-    attribute.value = new Uint8Array(flattenDeep(colors));
+    attribute.value = new Uint8Array(flatten(colors));
   }
 
   // Override the default picking colors calculation
@@ -221,7 +219,7 @@ export default class ChoroplethLayer64 extends Layer {
       }
     );
 
-    attribute.value = new Uint8Array(flattenDeep(colors));
+    attribute.value = new Uint8Array(flatten(colors));
   }
 }
 
@@ -234,7 +232,7 @@ ChoroplethLayer64.layerName = 'ChoroplethLayer64';
  * @returns {[Number,Number,Number][][][]} array of choropleths
  */
 function extractChoropleths(data) {
-  const normalizedGeojson = normalize(data);
+  const normalizedGeojson = normalizeGeojson(data);
   const result = [];
 
   normalizedGeojson.features.map((feature, featureIndex) => {
@@ -321,5 +319,5 @@ function calculateSurfaceIndices(choropleth) {
     ).slice(1, choropleth.length);
   }
 
-  return earcut(flattenDeep(choropleth), holes, 3);
+  return earcut(flatten(choropleth), holes, 3);
 }
